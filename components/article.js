@@ -30,33 +30,18 @@ own_template.innerHTML = /*html*/ `
     cursor:pointer;
   }
 </style>
-
-
-      <article>
-        <img height="80px" src="./media/storybook.png" />
-        <h4>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni est
-          mollitia quia, maxime doloremque consequatur recusandae impedit?
-          Vero nulla maiores sed officiis minus. Dolorem dicta quae
-          accusantium rerum repudiandae voluptatibus!
-        </h4>
-      </article>
-      <article>
-        <img height="80px" src="./media/webcomponents.png" />
-        <h4>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni est
-          mollitia quia, maxime doloremque consequatur recusandae impedit?
-          Vero nulla maiores sed officiis minus. Dolorem dicta quae
-          accusantium rerum repudiandae voluptatibus!
-        </h4>
-      </article>
+<article>
+<img height="80px" src="./media/article.png" />
+<h4 id="container">
+</h4>
+</article>
 
 `;
 
 /**
  *
  */
-export class Articles extends HTMLElement {
+export class Article extends HTMLElement {
   constructor() {
     super();
     let shadowRoot = this.attachShadow({ mode: "open" });
@@ -70,15 +55,37 @@ export class Articles extends HTMLElement {
   /**
    *
    */
+  get content() {
+    return this.getAttribute("content");
+  }
+  /**
+   *
+   */
   static get observedAttributes() {
-    return ["state"];
+    return ["state","content"];
+  }
+  /**
+   *
+   */
+  get bus() {
+    return this._bus;
+  }
+  /**
+   *
+   */
+  set bus(value) {
+    this._bus = value;
   }
 
   /**
    *
    */
   connectedCallback() {
+    console.log("Connected Callback")
     this.shadowRoot.appendChild(own_template.content.cloneNode(true));
+    this.container=this.shadowRoot.getElementById("container");
+    console.log("container="+this.container);
+    if (this.hasAttribute("content")) this.updateContent(this.getAttribute("content"));
   }
   /**
    *
@@ -90,15 +97,24 @@ export class Articles extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
     if (name === "state") this.updateState(newValue);
+    else if (name === "content") this.updateContent(newValue);
   }
   /**
-   *
-   * @param {*} state
-   * @returns
+   * 
+   * @param {*} state 
    */
   updateState(state) {
     // fsm.state et state doivent etre synchro
     //if (this.fsm && this.fsm.state !== state) this.fsm.goto(state)
   }
+  /**
+   * 
+   * @param {*} content 
+   */
+  updateContent(content){
+    console.log("Update with "+content)
+    if (this.container) this.container.innerHTML=content;
+    else console.log("Can't find container");
+  }
 }
-customElements.define("site-articles", Articles);
+customElements.define("site-article", Article);

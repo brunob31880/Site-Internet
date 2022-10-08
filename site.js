@@ -1,4 +1,6 @@
-import {Articles} from "./articles.js";
+import { Articles } from "./components/articles.js";
+import EventBus from "./modules/EventBus.js";
+import { ParseClasse } from "./modules/parse_utils.js";
 //
 const own_template = document.createElement("template");
 own_template.innerHTML = /*html*/ `
@@ -157,48 +159,61 @@ own_template.innerHTML = /*html*/ `
       </div>
     </div>
     <div class="right">
-     <site-articles></site-articles>
+     <site-articles id="articles"></site-articles>
     </div>
   </div>
 </main>
 <footer></footer>
-`
+`;
 
-
-
-// les différents etats de l'application
+/*
+ les différents etats de l'application
+ */
 const stateEnum = {
   login: 0,
-  normal: 1,
+  loading: 1,
+  normal: 2,
+  edition:3
 };
 
 /**
- * 
+ *
  */
 class Site extends HTMLElement {
   constructor() {
     super();
-    let shadowRoot = this.attachShadow({ mode: 'open' });
+    let shadowRoot = this.attachShadow({ mode: "open" });
+    this.bus = new EventBus();
   }
   /**
    * 
+   */
+  
+   get category() {
+    return this.getAttribute("category");
+  }
+  /**
+   *
    */
   get state() {
     return this.getAttribute("state");
   }
   /**
-   * 
+   *
    */
   static get observedAttributes() {
-    return ["state"];
+    return ["state","category"];
   }
 
   /**
-   * 
+   *
    */
   connectedCallback() {
     this.shadowRoot.appendChild(own_template.content.cloneNode(true));
-    // on définit la Machine a état
+    // On trouve les differents elements
+    this.articles = this.shadowRoot.getElementById("articles");
+    this.articles.bus = this.bus;
+    // On définit la Machine a état
     let m_transitions = [];
     let m_methods = [];
     for (const [key, value] of Object.entries(stateEnum)) {
@@ -211,27 +226,61 @@ class Site extends HTMLElement {
           });
       }
     }
+    // Permet à la machine a état d'aller à un état donné sans passer par une transition
+    m_transitions.push({
+      name: "goto",
+      from: "*",
+      to: function (s) {
+        return s;
+      },
+    });
+    this.fsm = new StateMachine({
+      init: this.state ? this.state : "loading",
+      data: {
+        articles: [],
+      },
+      transitions: m_transitions,
+    });
+    // On interroge la base de données
+    // mapping et destructuration
+    ParseClasse("Article", (rep) => {
+      this.fsm.articles = rep.map((u)=> {
+        let {content}=JSON.parse(JSON.stringify(u))
+        return {
+            content,
+        }
+      });
+      this.fsm.t12();
+
+    });
+    // Description du comportement de la machine a état
+    this.fsm.observe({
+      onT12: () => {
+        console.log("loaded");
+        this.articles.liste_articles=this.fsm.articles;
+      },
+    });
   }
+
   /**
-   * 
-   * @param {*} name 
-   * @param {*} oldValue 
-   * @param {*} newValue 
-   * @returns 
+   *
+   * @param {*} name
+   * @param {*} oldValue
+   * @param {*} newValue
+   * @returns
    */
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
     if (name === "state") this.updateState(newValue);
   }
   /**
-   * 
-   * @param {*} state 
-   * @returns 
+   *
+   * @param {*} state
+   * @returns
    */
   updateState(state) {
     // fsm.state et state doivent etre synchro
     //if (this.fsm && this.fsm.state !== state) this.fsm.goto(state)
   }
-
 }
-customElements.define('site-app', Site);
+customElements.define("site-app", Site);
