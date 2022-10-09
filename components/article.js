@@ -33,7 +33,7 @@ own_template.innerHTML = /*html*/ `
 .front {
   position:absolute;
      background-color: #9090f9;
-
+     width:100%;
     height:100%;
     border-radius: 2em;   
   display:flex;
@@ -44,9 +44,7 @@ own_template.innerHTML = /*html*/ `
    text-overflow: ellipsis;
   transition:width 300ms;
 }
-.closed {
-    width:100%;
-}
+
  .front > img {
     margin: 15px 15px 15px 25px;
     transform: rotate(-15deg);
@@ -74,7 +72,7 @@ own_template.innerHTML = /*html*/ `
   display:flex;
   width:100px;
 }
-
+</style>
 <article>
   <div class="general">
     <div class="buttons">
@@ -82,7 +80,7 @@ own_template.innerHTML = /*html*/ `
   trash
       </div>
     </div>
-    <div class="front closed">
+    <div class="front">
     <img height="80px" src="./media/article.png" />
       <div class="content">
         FRONT
@@ -131,24 +129,30 @@ export class Article extends HTMLElement {
   set bus(value) {
     this._bus = value;
   }
-
+  /**
+   * 
+   */
+  closing = () => {
+    console.log("Closing");
+    this.front.style.width = "100%";
+    //
+  };
   /**
    *
    */
   connectedCallback() {
     console.log("Connected Callback");
     this.shadowRoot.appendChild(own_template.content.cloneNode(true));
-    this.container = this.shadowRoot.getElementById("container");
-    console.log("container=" + this.container);
-
+    this.container = this.shadowRoot.querySelector(".content");
     this.front = this.shadowRoot.querySelector(".front");
+    console.log("front=" + this.front);
     let drag = false;
     let limit = 50;
     this.trash = this.shadowRoot.querySelector(".trash");
     //front.setAttribute("hidden","true");
     let x = 0;
     let y = 0;
-    
+
     this.front.addEventListener("mousedown", (e) => {
       drag = true;
       x = e.offsetX;
@@ -161,8 +165,10 @@ export class Article extends HTMLElement {
         x = e.offsetX;
         y = e.offsetY;
         console.log("X=" + x);
-        let alpha = (100 * x) / 1600;
-        if (alpha > 50) front.style.width = alpha + "%";
+        let alpha = (100 * x) / this.front.clientWidth;
+        console.log("Alpha="+alpha)
+        //if (alpha > 50)
+         this.front.style.width = alpha + "%";
       }
     });
 
@@ -177,12 +183,7 @@ export class Article extends HTMLElement {
       drag = false;
     });
 
-    closing = () => {
-      console.log("Closing");
-
-      front.style.width = "100%";
-      //
-    };
+   
     this.trash.addEventListener("click", (e) => {
       this.closing();
     });
