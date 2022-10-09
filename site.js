@@ -244,6 +244,7 @@ class Site extends HTMLElement {
     // On interroge la base de données
     // mapping et destructuration
     ParseClasse("Article", (rep) => {
+      console.log("REP"+rep);
       this.fsm.articles = rep.map((u)=> {
         let {content}=JSON.parse(JSON.stringify(u))
         return {
@@ -251,7 +252,6 @@ class Site extends HTMLElement {
         }
       });
       this.fsm.t12();
-
     });
     // Description du comportement de la machine a état
     this.fsm.observe({
